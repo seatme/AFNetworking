@@ -6,6 +6,8 @@ This is a maintained fork of the popular AFNetworking library.
 
 A few of the improvements and changes over upstream include:
 
+  * **ARC** - we hit a bug with retain cycle. It was actually easier
+    converting to arc than finding it.
   * **Ability to override the cache storage policy** (this improves support for NSURLCache and replacements like SDURLCache)
   * **iOS Multitasking support built in.**
   * **Allows configuration of the callback queue used to return asynchronous responses** instead of hard coding to `main_queue`. (The queue usedf by default is the queue used to create the operation). 
