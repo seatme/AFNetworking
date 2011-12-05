@@ -24,14 +24,16 @@
 
 static NSData * AFJSONEncode(id object, NSError **error) {
     NSData *data = nil;
+    data = [NSJSONSerialization dataWithJSONObject:object options:0 error:error];
     
+     /*
     SEL _JSONKitSelector = NSSelectorFromString(@"JSONDataWithOptions:error:"); 
     SEL _SBJSONSelector = NSSelectorFromString(@"JSONRepresentation");
     SEL _YAJLSelector = NSSelectorFromString(@"yajl_JSONString");
     
     id _NSJSONSerializationClass = NSClassFromString(@"NSJSONSerialization");
     SEL _NSJSONSerializationSelector = NSSelectorFromString(@"dataWithJSONObject:options:error:");
-    
+   
     if (_JSONKitSelector && [object respondsToSelector:_JSONKitSelector]) {
         NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[object methodSignatureForSelector:_JSONKitSelector]];
         invocation.target = object;
@@ -84,6 +86,7 @@ static NSData * AFJSONEncode(id object, NSError **error) {
         NSDictionary *userInfo = [NSDictionary dictionaryWithObject:NSLocalizedString(@"Please either target a platform that supports NSJSONSerialization or add one of the following libraries to your project: JSONKit, SBJSON, or YAJL", nil) forKey:NSLocalizedRecoverySuggestionErrorKey];
         [[NSException exceptionWithName:NSInternalInconsistencyException reason:NSLocalizedString(@"No JSON generation functionality available", nil) userInfo:userInfo] raise];
     }
+    */
 
     return data;
 }
@@ -91,6 +94,7 @@ static NSData * AFJSONEncode(id object, NSError **error) {
 static id AFJSONDecode(NSData *data, NSError **error) {    
     id JSON = nil;
     
+    /*
     SEL _JSONKitSelector = NSSelectorFromString(@"objectFromJSONDataWithParseOptions:error:"); 
     SEL _SBJSONSelector = NSSelectorFromString(@"JSONValue");
     SEL _YAJLSelector = NSSelectorFromString(@"yajl_JSONWithOptions:error:");
@@ -145,6 +149,8 @@ static id AFJSONDecode(NSData *data, NSError **error) {
         NSDictionary *userInfo = [NSDictionary dictionaryWithObject:NSLocalizedString(@"Please either target a platform that supports NSJSONSerialization or add one of the following libraries to your project: JSONKit, SBJSON, or YAJL", nil) forKey:NSLocalizedRecoverySuggestionErrorKey];
         [NSException exceptionWithName:NSInternalInconsistencyException reason:NSLocalizedString(@"No JSON parsing functionality available", nil) userInfo:userInfo];
     }
-        
+     */
+    
+    JSON = [NSJSONSerialization JSONObjectWithData:data options:0 error:error];
     return JSON;
 }

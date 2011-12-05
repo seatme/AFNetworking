@@ -100,26 +100,28 @@ static char kAFImageRequestOperationObjectKey;
     } else {
         self.image = placeholderImage;
         
-        AFImageRequestOperation *requestOperation = [[[AFImageRequestOperation alloc] initWithRequest:urlRequest] autorelease];
+        AFImageRequestOperation *requestOperation = [[AFImageRequestOperation alloc] initWithRequest:urlRequest];
         
+        __weak AFImageRequestOperation *weakself = requestOperation;
         requestOperation.finishedBlock = ^{
-            if (requestOperation.error) {
+            AFImageRequestOperation *strongself = weakself;
+            if (strongself.error) {
                 if (failure) {
-                    failure(requestOperation.request, requestOperation.response, requestOperation.error);
+                    failure(strongself.request, strongself.response, strongself.error);
                 }
             }
             else {
                 if (success) {
-                    success(requestOperation.request, requestOperation.response, requestOperation.responseImage);
+                    success(strongself.request, strongself.response, strongself.responseImage);
                 }
                 
                 if ([[urlRequest URL] isEqual:[[self.af_imageRequestOperation request] URL]]) {
-                    self.image = requestOperation.responseImage;
+                    self.image = strongself.responseImage;
                 } else {
                     self.image = placeholderImage;
                 }
                 
-                [[AFImageCache sharedImageCache] cacheImageData:requestOperation.responseData forURL:[urlRequest URL] cacheName:nil];
+                [[AFImageCache sharedImageCache] cacheImageData:strongself.responseData forURL:[urlRequest URL] cacheName:nil];
             }
         };
         

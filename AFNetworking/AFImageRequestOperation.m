@@ -60,19 +60,20 @@ typedef NSImage AFImage;
                                                       success:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, AFImage *image))success
                                                       failure:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, NSError *error))failure
 {
-    AFImageRequestOperation *operation = [[[AFImageRequestOperation alloc] initWithRequest:urlRequest] autorelease];
+    AFImageRequestOperation *operation = [[AFImageRequestOperation alloc] initWithRequest:urlRequest];
     
     operation.cacheName = cacheNameOrNil;
-    
+    __weak AFImageRequestOperation *weakOperation = operation;
     operation.finishedBlock = ^{
-        if (operation.error) {
+        AFImageRequestOperation *strongOperation = weakOperation;
+        if (strongOperation.error) {
             if (failure) {
-                failure(operation.request, operation.response, operation.error);
+                failure(strongOperation.request, strongOperation.response, strongOperation.error);
             }
         } else {                
             
             if (success) {
-                success(operation.request, operation.response, operation.responseImage);
+                success(strongOperation.request, strongOperation.response, strongOperation.responseImage);
             }
         }   
     };
@@ -101,7 +102,7 @@ typedef NSImage AFImage;
     self.imageScale = [[UIScreen mainScreen] scale];
 #endif
     
-    __block AFImageRequestOperation *blockSelf = self;
+    __weak AFImageRequestOperation *blockSelf = self;
     [self addExecutionBlock:^{
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
         BOOL cacheResponseDataInsteadOfImage = YES; //converting to a PNG to put in the cache is costly so lets try and avoid it.
@@ -145,12 +146,6 @@ typedef NSImage AFImage;
     return self;
 }
 
-- (void)dealloc {
-    [_imageProcessingBlock release];
-    [_cacheName release];
-    [_responseImage release];
-    [super dealloc];
-}
 
 - (id)responseObject {
     return [self responseImage];

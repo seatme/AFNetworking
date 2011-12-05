@@ -41,7 +41,7 @@ static NSString * const kAFMultipartFormBoundary = @"Boundary+0xAbCdEfGbOuNdArY"
     NSMutableData *_mutableData;
 }
 
-@property (readonly) NSData *data;
+@property (weak, readonly) NSData *data;
 
 - (id)initWithStringEncoding:(NSStringEncoding)encoding;
 
@@ -77,14 +77,14 @@ static NSString * AFBase64EncodedStringFromString(NSString *string) {
         output[idx + 3] = (i + 2) < length ? kAFBase64EncodingTable[(value >> 0)  & 0x3F] : '=';
     }
     
-    return [[[NSString alloc] initWithData:mutableData encoding:NSASCIIStringEncoding] autorelease];
+    return [[NSString alloc] initWithData:mutableData encoding:NSASCIIStringEncoding];
 }
 
 NSString * AFURLEncodedStringFromStringWithEncoding(NSString *string, NSStringEncoding encoding) {
     static NSString * const kAFLegalCharactersToBeEscaped = @"?!@#$^&%*+,:;='\"`<>()[]{}/\\|~ ";
     
     // Following the suggestion in documentation for `CFURLCreateStringByAddingPercentEscapes` to "pre-process" URL strings (using stringByReplacingPercentEscapesUsingEncoding) with unpredictable sequences that may already contain percent escapes.
-	return [(NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (CFStringRef)[string stringByReplacingPercentEscapesUsingEncoding:encoding], NULL, (CFStringRef)kAFLegalCharactersToBeEscaped, CFStringConvertNSStringEncodingToEncoding(encoding)) autorelease];
+	return (__bridge_transfer NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (__bridge CFStringRef)[string stringByReplacingPercentEscapesUsingEncoding:encoding], NULL, (__bridge CFStringRef)kAFLegalCharactersToBeEscaped, CFStringConvertNSStringEncodingToEncoding(encoding));
 }
 
 NSString * AFQueryStringFromParametersWithEncoding(NSDictionary *parameters, NSStringEncoding encoding) {
@@ -101,7 +101,7 @@ static NSString * AFJSONStringFromParameters(NSDictionary *parameters) {
     NSError *error = nil;
     NSData *JSONData = AFJSONEncode(parameters, &error);
     if (!error) {
-        return [[[NSString alloc] initWithData:JSONData encoding:NSUTF8StringEncoding] autorelease];
+        return [[NSString alloc] initWithData:JSONData encoding:NSUTF8StringEncoding];
     } else {
         return nil;
     }
@@ -113,17 +113,17 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
     
     NSData *propertyListData = [NSPropertyListSerialization dataWithPropertyList:parameters format:NSPropertyListXMLFormat_v1_0 options:0 error:&error];
     if (!error) {
-        propertyListString = [[[NSString alloc] initWithData:propertyListData encoding:NSUTF8StringEncoding] autorelease];
+        propertyListString = [[NSString alloc] initWithData:propertyListData encoding:NSUTF8StringEncoding];
     }
     
     return propertyListString;
 }
 
 @interface AFHTTPClient ()
-@property (readwrite, nonatomic, retain) NSURL *baseURL;
-@property (readwrite, nonatomic, retain) NSMutableArray *registeredHTTPOperationClassNames;
-@property (readwrite, nonatomic, retain) NSMutableDictionary *defaultHeaders;
-@property (readwrite, nonatomic, retain) NSOperationQueue *operationQueue;
+@property (readwrite, nonatomic, strong) NSURL *baseURL;
+@property (readwrite, nonatomic, strong) NSMutableArray *registeredHTTPOperationClassNames;
+@property (readwrite, nonatomic, strong) NSMutableDictionary *defaultHeaders;
+@property (readwrite, nonatomic, strong) NSOperationQueue *operationQueue;
 @end
 
 @implementation AFHTTPClient
@@ -135,7 +135,7 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
 @synthesize operationQueue = _operationQueue;
 
 + (AFHTTPClient *)clientWithBaseURL:(NSURL *)url {
-    return [[[self alloc] initWithBaseURL:url] autorelease];
+    return [[self alloc] initWithBaseURL:url];
 }
 
 - (id)initWithBaseURL:(NSURL *)url {
@@ -167,19 +167,12 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
     [self setDefaultHeader:@"User-Agent" value:[NSString stringWithFormat:@"%@/%@ (%@)", [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleIdentifierKey], [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleVersionKey], @"unknown"]];
 #endif
     
-    self.operationQueue = [[[NSOperationQueue alloc] init] autorelease];
+    self.operationQueue = [[NSOperationQueue alloc] init];
 	[self.operationQueue setMaxConcurrentOperationCount:kAFHTTPClientDefaultMaxConcurrentOperationCount];
     
     return self;
 }
 
-- (void)dealloc {
-    [_baseURL release];
-    [_registeredHTTPOperationClassNames release];
-    [_defaultHeaders release];
-    [_operationQueue release];
-    [super dealloc];
-}
 
 #pragma mark -
 
@@ -230,7 +223,7 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
                                 parameters:(NSDictionary *)parameters 
 {	
     NSURL *url = [NSURL URLWithString:path relativeToURL:self.baseURL];
-	NSMutableURLRequest *request = [[[NSMutableURLRequest alloc] initWithURL:url] autorelease];
+	NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
     [request setHTTPMethod:method];
     [request setAllHTTPHeaderFields:self.defaultHeaders];
 	
@@ -239,7 +232,7 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
             url = [NSURL URLWithString:[[url absoluteString] stringByAppendingFormat:[path rangeOfString:@"?"].location == NSNotFound ? @"?%@" : @"&%@", AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding)]];
             [request setURL:url];
         } else {
-            NSString *charset = (NSString *)CFStringConvertEncodingToIANACharSetName(CFStringConvertNSStringEncodingToEncoding(self.stringEncoding));
+            NSString *charset = (__bridge_transfer NSString *)CFStringConvertEncodingToIANACharSetName(CFStringConvertNSStringEncodingToEncoding(self.stringEncoding));
             switch (self.parameterEncoding) {
                 case AFFormURLParameterEncoding:;
                     [request setValue:[NSString stringWithFormat:@"application/x-www-form-urlencoded; charset=%@", charset] forHTTPHeaderField:@"Content-Type"];
@@ -295,7 +288,6 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
     [request setValue:[NSString stringWithFormat:@"multipart/form-data; boundary=%@", kAFMultipartFormBoundary] forHTTPHeaderField:@"Content-Type"];
     [request setHTTPBody:[formData data]];
     
-    [formData autorelease];
     
     return request;
 }
@@ -318,18 +310,20 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
         operation = [[AFHTTPRequestOperation alloc] initWithRequest:urlRequest];
     }
     
+    __weak AFHTTPRequestOperation *weakSelf = operation;
     operation.finishedBlock = ^{
-        if (operation.error) {
-            failure(operation,operation.error);
+        AFHTTPRequestOperation *strongSelf = weakSelf;
+        if (strongSelf.error) {
+            failure(strongSelf,strongSelf.error);
         }
         else
         {
-            success(operation,operation.responseObject);
+            success(strongSelf,strongSelf.responseObject);
         }
     };
 
        
-    return [operation autorelease];
+    return operation;
 }
 
 - (void)enqueueHTTPRequestOperation:(AFHTTPRequestOperation *)operation {
@@ -400,7 +394,7 @@ static inline NSString * AFMultipartFormFinalBoundary() {
 
 @interface AFMultipartFormData ()
 @property (readwrite, nonatomic, assign) NSStringEncoding stringEncoding;
-@property (readwrite, nonatomic, retain) NSMutableData *mutableData;
+@property (readwrite, nonatomic, strong) NSMutableData *mutableData;
 @end
 
 @implementation AFMultipartFormData
@@ -419,10 +413,6 @@ static inline NSString * AFMultipartFormFinalBoundary() {
     return self;
 }
 
-- (void)dealloc {
-    [_mutableData release];
-    [super dealloc];
-}
 
 - (NSData *)data {
     NSMutableData *finalizedData = [NSMutableData dataWithData:self.mutableData];
@@ -464,7 +454,7 @@ static inline NSString * AFMultipartFormFinalBoundary() {
         [userInfo setValue:fileURL forKey:NSURLErrorFailingURLErrorKey];
         [userInfo setValue:NSLocalizedString(@"Expected URL to be a file URL", nil) forKey:NSLocalizedFailureReasonErrorKey];
         if (error != NULL) {
-          *error = [[[NSError alloc] initWithDomain:AFNetworkingErrorDomain code:NSURLErrorBadURL userInfo:userInfo] autorelease];  
+          *error = [[NSError alloc] initWithDomain:AFNetworkingErrorDomain code:NSURLErrorBadURL userInfo:userInfo];  
         }
         
         return NO;

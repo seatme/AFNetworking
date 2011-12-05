@@ -62,13 +62,13 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
 
 @interface AFURLConnectionOperation ()
 @property (readwrite, nonatomic, assign) AFOperationState state;
-@property (readwrite, nonatomic, assign) NSURLConnection *connection;
-@property (readwrite, nonatomic, retain) NSURLRequest *request;
-@property (readwrite, nonatomic, retain) NSURLResponse *response;
-@property (readwrite, nonatomic, retain) NSData *responseData;
+@property (readwrite, nonatomic, weak) NSURLConnection *connection;
+@property (readwrite, nonatomic, strong) NSURLRequest *request;
+@property (readwrite, nonatomic, strong) NSURLResponse *response;
+@property (readwrite, nonatomic, strong) NSData *responseData;
 @property (readwrite, nonatomic, copy) NSString *responseString;
 @property (readwrite, nonatomic, assign) NSInteger totalBytesRead;
-@property (readwrite, nonatomic, retain) NSMutableData *dataAccumulator;
+@property (readwrite, nonatomic, strong) NSMutableData *dataAccumulator;
 @property (readwrite, nonatomic, copy) AFURLConnectionOperationProgressBlock uploadProgress;
 @property (readwrite, nonatomic, copy) AFURLConnectionOperationProgressBlock downloadProgress;
 
@@ -98,10 +98,21 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
 
 + (void)networkRequestThreadEntryPoint:(id)__unused object {
     do {
-        NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-        [[NSRunLoop currentRunLoop] run];
-        [pool drain];
+    
+        @autoreleasepool {
+            @try {
+                    [[NSRunLoop currentRunLoop] run];
+            }
+            @catch  (NSException * exception){
+                NSLog(@"exception %@", exception);
+            }
+            @finally {
+
+            }
+        }
     } while (YES);
+
+
 }
 
 + (NSThread *)networkRequestThread {
@@ -134,24 +145,12 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
 }
 
 - (void)dealloc {
-    [_executionBlocks release];
-    [_runLoopModes release];
     
-    [_request release];
-    [_response release];
-    [_error release];
     
-    [_responseData release];
-    [_responseString release];
-    [_dataAccumulator release];
-    [_outputStream release]; _outputStream = nil;
     
-    [_connection release]; _connection = nil;
+     _connection = nil;
 	
-    [_uploadProgress release];
-    [_downloadProgress release];
 
-    [super dealloc];
 }
 
 - (NSInputStream *)inputStream {
@@ -159,7 +158,7 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
 }
 
 - (void)setInputStream:(NSInputStream *)inputStream {
-    NSMutableURLRequest *mutableRequest = [[self.request mutableCopy] autorelease];
+    NSMutableURLRequest *mutableRequest = [self.request mutableCopy];
     mutableRequest.HTTPBodyStream = inputStream;
     self.request = mutableRequest;
 }
@@ -235,10 +234,10 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
     if (!_responseString && self.response && self.responseData) {
         NSStringEncoding textEncoding = NSUTF8StringEncoding;
         if (self.response.textEncodingName) {
-            textEncoding = CFStringConvertEncodingToNSStringEncoding(CFStringConvertIANACharSetNameToEncoding((CFStringRef)self.response.textEncodingName));
+            textEncoding = CFStringConvertEncodingToNSStringEncoding(CFStringConvertIANACharSetNameToEncoding((__bridge CFStringRef)self.response.textEncodingName));
         }
         
-        self.responseString = [[[NSString alloc] initWithData:self.responseData encoding:textEncoding] autorelease];
+        self.responseString = [[NSString alloc] initWithData:self.responseData encoding:textEncoding];
     }
     
     return _responseString;
@@ -248,7 +247,7 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
     if (!block) {
         [super setCompletionBlock:nil];
     } else {
-        __block id _blockSelf = self;
+        __unsafe_unretained id _blockSelf = self;
         [super setCompletionBlock:^ {
             block();
             [_blockSelf setCompletionBlock:nil];
@@ -297,7 +296,7 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
         return;
     }
     
-    self.connection = [[[NSURLConnection alloc] initWithRequest:self.request delegate:self startImmediately:NO] autorelease];
+    self.connection = [[NSURLConnection alloc] initWithRequest:self.request delegate:self startImmediately:NO];
     
     NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
     for (NSString *runLoopMode in self.runLoopModes) {
@@ -310,6 +309,7 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
 
 - (void)finish {
     self.state = AFHTTPOperationFinishedState;
+    _executionBlocks=nil;
 }
 
 - (void)cancel {
@@ -370,30 +370,21 @@ didReceiveResponse:(NSURLResponse *)response
         [self.outputStream close];
     } else {
         self.responseData = [NSData dataWithData:self.dataAccumulator];
-        [_dataAccumulator release]; _dataAccumulator = nil;
+         _dataAccumulator = nil;
     }
     
-    if ([_executionBlocks count] > 0) {
-        dispatch_async(request_operation_execution_block_queue(), ^{
-            NSArray *_executionBlocksCopy;
-            @synchronized(_executionBlocks) {
-                //handle a potential race
-                _executionBlocksCopy = [_executionBlocks copy];
-                [_executionBlocks removeAllObjects];
-            }
-            for (void(^executionBlock)(void) in _executionBlocksCopy)
+    if (![self isCancelled]) {
+        if ([_executionBlocks count] > 0) {
+            for (void(^executionBlock)(void) in _executionBlocks)
             {
                 if ([self isCancelled]) 
                     break;
                 executionBlock();
+                
             }
-            [_executionBlocksCopy release];
-            [self finish];
-        });
+        }
     }
-    else {
-        [self finish];
-    }
+    [self finish];
     
    
 }
@@ -406,7 +397,7 @@ didReceiveResponse:(NSURLResponse *)response
     if (self.outputStream) {
         [self.outputStream close];
     } else {
-        [_dataAccumulator release]; _dataAccumulator = nil;
+         _dataAccumulator = nil;
     }
     
     @synchronized(_executionBlocks){
@@ -433,7 +424,7 @@ didReceiveResponse:(NSURLResponse *)response
                                                  data:cachedResponse.data
                                              userInfo:cachedResponse.userInfo
                                         storagePolicy:self.cacheStoragePolicy];
-        return [alternativeCachedResponse autorelease];
+        return alternativeCachedResponse;
     }
 }
 
@@ -443,14 +434,14 @@ didReceiveResponse:(NSURLResponse *)response
         @throw [NSException exceptionWithName:NSInvalidArgumentException reason:@"operation has already began executing" userInfo:nil];
     }
     @synchronized(_executionBlocks) {
-        [_executionBlocks addObject:[[executionBlock copy] autorelease]];
+        [_executionBlocks addObject:executionBlock];
     }
 }
 
 - (NSArray *)executionBlocks {
     @synchronized(_executionBlocks)
     {
-        return [[_executionBlocks copy] autorelease];
+        return [_executionBlocks copy];
     }
 }
 

@@ -25,7 +25,7 @@
 
 @interface AFJSONRequestOperation ()
 @property (readwrite, nonatomic, retain) id responseJSON;
-@property (readwrite, nonatomic, retain) NSError *JSONError;
+@property (readwrite, nonatomic, strong) NSError *JSONError;
 
 + (NSSet *)defaultAcceptableContentTypes;
 + (NSSet *)defaultAcceptablePathExtensions;
@@ -40,18 +40,20 @@
                                                     success:(AFJSONResponseSuccessBlock) success
                                                     failure:(AFJSONResponseFailureBlock) failure
 {
-    AFJSONRequestOperation *requestOperation = [[[self alloc] initWithRequest:urlRequest] autorelease];
+    AFJSONRequestOperation *requestOperation = [[self alloc] initWithRequest:urlRequest];
 
+    __weak AFJSONRequestOperation *weakSelf = requestOperation; 
     requestOperation.finishedBlock = ^{
-        if (requestOperation.error) {
+        AFJSONRequestOperation *strongSelf = weakSelf;
+        if (strongSelf.error) {
             if (failure) {
-                failure(requestOperation.request,requestOperation.response,requestOperation.error,requestOperation.responseJSON);
+                failure(strongSelf.request,strongSelf.response,strongSelf.error,strongSelf.responseJSON);
             }
         }
         else 
         {
             if (success) {
-                success(requestOperation.request,requestOperation.response,requestOperation.responseJSON);
+                success(strongSelf.request,strongSelf.response,strongSelf.responseJSON);
             }
         }
     };
@@ -78,27 +80,21 @@
         return nil;
     }
     
-    __block AFJSONRequestOperation *blockSelf = self;
-    [self addExecutionBlock:^{
+    [self addExecutionBlock:[^{
         NSError *error = nil;
-        if ([blockSelf.responseData length] == 0) {
-            blockSelf.responseJSON = nil;
+        if ([self.responseData length] == 0) {
+            self.responseJSON = nil;
         } else {
-            blockSelf.responseJSON = AFJSONDecode(blockSelf.responseData, &error);
+            self.responseJSON = AFJSONDecode(self.responseData, &error);
         }
-        blockSelf.JSONError = error;
-    }];
+        self.JSONError = error;
+    } copy]];
     
     self.acceptableContentTypes = [[self class] defaultAcceptableContentTypes];
     
     return self;
 }
 
-- (void)dealloc {
-    [_responseJSON release];
-    [_JSONError release];
-    [super dealloc];
-}
 
 - (id)responseObject {
     return [self responseJSON];
@@ -106,7 +102,7 @@
 
 - (NSError *)error {
     if (_JSONError) {
-        return [[_JSONError retain] autorelease];
+        return _JSONError;
     } else {
         return [super error];
     }

@@ -23,9 +23,9 @@
 #import "AFPropertyListRequestOperation.h"
 
 @interface AFPropertyListRequestOperation ()
-@property (readwrite, nonatomic, retain) id responsePropertyList;
+@property (readwrite, nonatomic, strong) id responsePropertyList;
 @property (readwrite, nonatomic, assign) NSPropertyListFormat propertyListFormat;
-@property (readwrite, nonatomic, retain) NSError *propertyListError;
+@property (readwrite, nonatomic, strong) NSError *propertyListError;
 
 + (NSSet *)defaultAcceptableContentTypes;
 + (NSSet *)defaultAcceptablePathExtensions;
@@ -41,18 +41,20 @@
                                                                     success:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, id propertyList))success
                                                                     failure:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, NSError *error, id propertyList))failure
 {
-    AFPropertyListRequestOperation *requestOperation = [[[self alloc] initWithRequest:request] autorelease];
+    AFPropertyListRequestOperation *requestOperation = [[self alloc] initWithRequest:request];
     
+    __weak AFPropertyListRequestOperation *weakSelf = requestOperation;
     requestOperation.finishedBlock = ^{
-        if (requestOperation.error) {
+        AFPropertyListRequestOperation *strongSelf = weakSelf;
+        if (strongSelf.error) {
             if (failure) {
-                failure(requestOperation.request, requestOperation.response, requestOperation.error, requestOperation.responsePropertyList);
+                failure(strongSelf.request, strongSelf.response, strongSelf.error, strongSelf.responsePropertyList);
             }
         }
         else 
         {
             if (success) {
-                success(requestOperation.request, requestOperation.response, requestOperation.responsePropertyList);
+                success(strongSelf.request, strongSelf.response, strongSelf.responsePropertyList);
             }
         }
     };
@@ -74,7 +76,7 @@
         return nil;
     }
     
-    __block AFPropertyListRequestOperation *blockSelf = self;
+    __weak AFPropertyListRequestOperation *blockSelf = self;
     [self addExecutionBlock:^{
         NSPropertyListFormat format;
         NSError *error = nil;
@@ -94,11 +96,6 @@
     return self;
 }
 
-- (void)dealloc {
-    [_responsePropertyList release];
-    [_propertyListError release];
-    [super dealloc];
-}
 
 - (id)responseObject {
     return [self responsePropertyList];

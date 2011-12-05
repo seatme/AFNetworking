@@ -70,13 +70,13 @@
         }
         
         if (self.finishedBlock) {
-            dispatch_async(self.callbackQueue, ^(void) {
+            dispatch_sync(self.callbackQueue, ^(void) {
                 self.finishedBlock();
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_4_0
-                [self endBackgroundTask];
-#endif
-                self.finishedBlock = nil;
             });
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_4_0
+            [self endBackgroundTask];
+#endif
+            self.finishedBlock = nil;
         } else {
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_4_0
             [self endBackgroundTask];
@@ -97,17 +97,13 @@
     [self endBackgroundTask];
 #endif
     
-    [_completionBlock release], _completionBlock=nil;
+    _completionBlock=nil;
     
     if (_callbackQueue) {
         dispatch_release(_callbackQueue),_callbackQueue=NULL;
     }
     
-    [_acceptableStatusCodes release];
-    [_acceptableContentTypes release];
-    [_HTTPError release];
-    [_finishedBlock release], _finishedBlock = nil;
-    [super dealloc];
+    _finishedBlock = nil;
 }
 
 - (NSHTTPURLResponse *)response {
@@ -121,18 +117,18 @@
             [userInfo setValue:[NSString stringWithFormat:NSLocalizedString(@"Expected status code %@, got %d", nil), self.acceptableStatusCodes, [self.response statusCode]] forKey:NSLocalizedDescriptionKey];
             [userInfo setValue:[self.request URL] forKey:NSURLErrorFailingURLErrorKey];
             
-            self.HTTPError = [[[NSError alloc] initWithDomain:AFNetworkingErrorDomain code:NSURLErrorBadServerResponse userInfo:userInfo] autorelease];
+            self.HTTPError = [[NSError alloc] initWithDomain:AFNetworkingErrorDomain code:NSURLErrorBadServerResponse userInfo:userInfo];
         } else if ([self hasContent] && ![self hasAcceptableContentType]) { // Don't invalidate content type if there is no content
             NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
             [userInfo setValue:[NSString stringWithFormat:NSLocalizedString(@"Expected content type %@, got %@", nil), self.acceptableContentTypes, [self.response MIMEType]] forKey:NSLocalizedDescriptionKey];
             [userInfo setValue:[self.request URL] forKey:NSURLErrorFailingURLErrorKey];
             
-            self.HTTPError = [[[NSError alloc] initWithDomain:AFNetworkingErrorDomain code:NSURLErrorCannotDecodeContentData userInfo:userInfo] autorelease];
+            self.HTTPError = [[NSError alloc] initWithDomain:AFNetworkingErrorDomain code:NSURLErrorCannotDecodeContentData userInfo:userInfo];
         }
     }
     
     if (_HTTPError) {
-        return [[_HTTPError retain] autorelease];
+        return _HTTPError;
     } else {
         return [super error];
     }
@@ -205,7 +201,6 @@
 - (void)setCompletionBlock:(void (^)(void))block
 {
     if (block != _completionBlock){
-        [_completionBlock release];
         _completionBlock = [block copy];
     }
 }

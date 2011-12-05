@@ -25,7 +25,7 @@
 #include <Availability.h>
 
 @interface AFXMLRequestOperation ()
-@property (readwrite, nonatomic, retain) NSXMLParser *responseXMLParser;
+@property (readwrite, nonatomic, strong) NSXMLParser *responseXMLParser;
 + (NSSet *)defaultAcceptableContentTypes;
 + (NSSet *)defaultAcceptablePathExtensions;
 @end
@@ -38,18 +38,20 @@
                                                         failure:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, NSError *error, NSXMLParser *XMLParser))failure
 {
     
-    AFXMLRequestOperation *requestOperation = [[[self alloc] initWithRequest:urlRequest] autorelease];
+    AFXMLRequestOperation *requestOperation = [[self alloc] initWithRequest:urlRequest];
     //need to really split this class up.
+    __weak AFXMLRequestOperation *weakself = requestOperation;
     requestOperation.finishedBlock = ^{
-        if (requestOperation.error){
+        AFXMLRequestOperation *strongself = weakself;
+        if (strongself.error){
             if (failure) {
-                failure(requestOperation.request, requestOperation.response, requestOperation.error, requestOperation.responseXMLParser);
+                failure(strongself.request, strongself.response, strongself.error, strongself.responseXMLParser);
             }
         }
         else
         {
             if (success) {
-                success(requestOperation.request, requestOperation.response, requestOperation.responseXMLParser);
+                success(strongself.request, strongself.response, strongself.responseXMLParser);
             }
         }
         
@@ -73,9 +75,9 @@
         return nil;
     }
     
-    __block AFXMLRequestOperation *blockSelf = self;
+    __weak AFXMLRequestOperation *blockSelf = self;
     [self addExecutionBlock:^{
-         blockSelf.responseXMLParser = [[[NSXMLParser alloc] initWithData:blockSelf.responseData] autorelease];
+         blockSelf.responseXMLParser = [[NSXMLParser alloc] initWithData:blockSelf.responseData];
     }];
     
     self.acceptableContentTypes = [[self class] defaultAcceptableContentTypes];
@@ -83,17 +85,13 @@
     return self;
 }
 
-- (void)dealloc {
-    [_responseXMLParser release];
-    [super dealloc];
-}
 
 - (id)responseObject {
     return [self responseXMLParser];
 }
 
 - (NSXMLParser *)responseXMLParser {
-    return [[_responseXMLParser retain] autorelease];
+    return _responseXMLParser;
 }
 
 #pragma mark - NSOperation

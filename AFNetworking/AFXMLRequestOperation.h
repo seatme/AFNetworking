@@ -51,7 +51,7 @@
 /**
  An `NSXMLParser` object constructed from the response data.
  */
-@property (readonly, nonatomic, retain) NSXMLParser *responseXMLParser;
+@property (readonly, nonatomic, strong) NSXMLParser *responseXMLParser;
 
 
 /**

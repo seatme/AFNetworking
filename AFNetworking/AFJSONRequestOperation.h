@@ -51,7 +51,7 @@ typedef void (^AFJSONResponseFailureBlock)(NSURLRequest *request, NSHTTPURLRespo
 /**
  A JSON object constructed from the response data. If an error occurs while parsing, `nil` will be returned, and the `error` property will be set to the error.
  */
-@property (nonatomic, retain, readonly) id responseJSON;
+@property (nonatomic, strong, readonly) id responseJSON;
 
 ///----------------------------------
 /// @name Creating Request Operations
