@@ -247,7 +247,7 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
     if (!block) {
         [super setCompletionBlock:nil];
     } else {
-        __unsafe_unretained id _blockSelf = self;
+        __weak id _blockSelf = self;
         [super setCompletionBlock:^ {
             block();
             [_blockSelf setCompletionBlock:nil];
