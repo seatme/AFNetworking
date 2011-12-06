@@ -29,7 +29,7 @@ typedef NSImage AFImage;
 #endif
 
 @interface AFImageRequestOperation ()
-@property (readwrite, nonatomic, retain) AFImage *responseImage;
+@property (readwrite, nonatomic, strong) AFImage *responseImage;
 
 + (NSSet *)defaultAcceptableContentTypes;
 + (NSSet *)defaultAcceptablePathExtensions;

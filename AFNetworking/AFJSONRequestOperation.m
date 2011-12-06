@@ -24,7 +24,7 @@
 #import "AFJSONUtilities.h"
 
 @interface AFJSONRequestOperation ()
-@property (readwrite, nonatomic, retain) id responseJSON;
+@property (readwrite, nonatomic, strong) id responseJSON;
 @property (readwrite, nonatomic, strong) NSError *JSONError;
 
 + (NSSet *)defaultAcceptableContentTypes;
