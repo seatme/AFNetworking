@@ -62,7 +62,7 @@
 }
 
 + (NSSet *)defaultAcceptableContentTypes {
-    return [NSSet setWithObjects:@"application/json", @"text/json", nil];
+    return [NSSet setWithObjects:@"application/json", @"text/json", @"text/javascript", nil];
 }
 
 + (NSSet *)defaultAcceptablePathExtensions {
