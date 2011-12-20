@@ -94,7 +94,9 @@ static NSTimeInterval const kAFNetworkActivityIndicatorInvisibilityDelay = 0.25;
 }
 
 - (void)incrementActivityCount {
-    OSAtomicIncrement32Barrier(&_activityCount);
+    OSAtomicIncrement32(&_activityCount);
+    
+    [self _updateActivityCount];
 }
 
 - (void)decrementActivityCount {
@@ -103,7 +105,7 @@ static NSTimeInterval const kAFNetworkActivityIndicatorInvisibilityDelay = 0.25;
         return;
     }
     
-    OSAtomicDecrement32Barrier(&_activityCount);
+    OSAtomicDecrement32(&_activityCount);
     
     [self _updateActivityCount];
 }
