@@ -129,7 +129,7 @@ typedef NSImage AFImage;
         }
         
 #elif __MAC_OS_X_VERSION_MIN_REQUIRED
-        NSImage *image = [[[NSImage alloc] initWithData:self.responseData] autorelease];
+        NSImage *image = [[NSImage alloc] initWithData:blockSelf.responseData];
         
         if (blockSelf.imageProcessingBlock) {
             image = blockSelf.imageProcessingBlock(image);
@@ -168,12 +168,11 @@ typedef NSImage AFImage;
     if (!_responseImage && [self isFinished]) {
         // Ensure that the image is set to it's correct pixel width and height
         NSBitmapImageRep *bitimage = [[NSBitmapImageRep alloc] initWithData:self.responseData];
-        self.responseImage = [[[NSImage alloc] initWithSize:NSMakeSize([bitimage pixelsWide], [bitimage pixelsHigh])] autorelease];
+        self.responseImage = [[NSImage alloc] initWithSize:NSMakeSize([bitimage pixelsWide], [bitimage pixelsHigh])];
         [self.responseImage addRepresentation:bitimage];
-        [bitimage release];
     }
     
-    return [[_responseImage retain] autorelease];
+    return _responseImage;
 }
 #endif
 

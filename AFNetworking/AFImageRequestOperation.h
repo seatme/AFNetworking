@@ -72,7 +72,7 @@ typedef NSImage *(^AFImageResponseProcessingBlock)(NSImage *image);
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
 @property (readonly, nonatomic, strong) UIImage *responseImage;
 #elif __MAC_OS_X_VERSION_MIN_REQUIRED
-@property (readonly, nonatomic, retain) NSImage *responseImage;
+@property (readonly, nonatomic, strong) NSImage *responseImage;
 #endif
 
 /*

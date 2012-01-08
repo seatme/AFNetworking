@@ -42,18 +42,18 @@
                                                           success:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, NSXMLDocument *document))success
                                                           failure:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, NSError *error, NSXMLDocument *document))failure
 {
-    AFXMLDocumentRequestOperation *requestOperation = [[[self alloc] initWithRequest:urlRequest] autorelease];
-    
-    requestOperation.responseProcessedBlock = ^{
-        if (requestOperation.error){
+    AFXMLDocumentRequestOperation *requestOperation = [[self alloc] initWithRequest:urlRequest];
+    __weak AFXMLDocumentRequestOperation *weakself = requestOperation;
+    requestOperation.finishedBlock = ^{
+        if (weakself.error){
             if (failure) {
-                failure(requestOperation.request, requestOperation.response, requestOperation.error, requestOperation.responseXMLDocument);
+                failure(weakself.request, weakself.response, weakself.error, weakself.responseXMLDocument);
             }
         }
         else
         {
             if (success) {
-                success(requestOperation.request, requestOperation.response, requestOperation.responseXMLDocument);
+                success(weakself.request, weakself.response, weakself.responseXMLDocument);
             }
         }
         
@@ -81,18 +81,11 @@
     __block AFXMLDocumentRequestOperation *blockSelf = self;
     [self addExecutionBlock:^{
         NSError *error = nil;
-        blockSelf.responseXMLDocument = [[[NSXMLDocument alloc] initWithData:blockSelf.responseData options:0 error:&error] autorelease];
+        blockSelf.responseXMLDocument = [[NSXMLDocument alloc] initWithData:blockSelf.responseData options:0 error:&error];
         blockSelf.error = error;
     }];
     
     return self;
-}
-
-- (void)dealloc {
-    [_responseXMLDocument release];
-    [_XMLError release];
-    
-    [super dealloc];
 }
 
 - (id)responseObject {
@@ -101,13 +94,12 @@
 
 
 - (NSXMLDocument *)responseXMLDocument {
-    
-    return [[_responseXMLDocument retain] autorelease];
+    return _responseXMLDocument;
 }
 
 - (NSError *)error {
     if (_XMLError) {
-        return [[_XMLError retain] autorelease];
+        return _XMLError;
     } else {
         return [super error];
     }
@@ -117,8 +109,6 @@
 
 - (void)cancel {
     [super cancel];
-    
-    self.responseXMLParser.delegate = nil;
 }
 
 + (BOOL)canProcessRequest:(NSURLRequest *)request {

@@ -49,7 +49,7 @@ static inline NSString * AFImageCacheKeyFromURLAndCacheName(NSURL *url, NSString
 - (NSImage *)cachedImageForURL:(NSURL *)url
                      cacheName:(NSString *)cacheName
 {
-    return [[[NSImage alloc] initWithData:[self objectForKey:AFImageCacheKeyFromURLAndCacheName(url, cacheName)]] autorelease];
+    return [[NSImage alloc] initWithData:[self objectForKey:AFImageCacheKeyFromURLAndCacheName(url, cacheName)]];
 }
 #endif
 
