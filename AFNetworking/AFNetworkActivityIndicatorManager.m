@@ -25,24 +25,21 @@
 #import <libkern/OSAtomic.h>
 
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
-static NSTimeInterval const kAFNetworkActivityIndicatorInvisibilityDelay = 0.25;
+static NSTimeInterval const kAFNetworkActivityIndicatorInvisibilityDelay = 2.0;
 
 @interface AFNetworkActivityIndicatorManager () {
 @private
 	NSInteger _activityCount;
     BOOL _enabled;
-    NSTimer *_activityIndicatorVisibilityTimer;
 }
 
-@property (readwrite, nonatomic, strong) NSTimer *activityIndicatorVisibilityTimer;
 @property (readonly, getter = isNetworkActivityIndicatorVisible) BOOL networkActivityIndicatorVisible;
 
 - (void)_updateActivityCount;
-- (void)updateNetworkActivityIndicatorVisibility;
+- (void)_updateNetworkActivityIndicatorVisibility;
 @end
 
 @implementation AFNetworkActivityIndicatorManager
-@synthesize activityIndicatorVisibilityTimer = _activityIndicatorVisibilityTimer;
 @synthesize enabled = _enabled;
 @dynamic networkActivityIndicatorVisible;
 
@@ -70,27 +67,29 @@ static NSTimeInterval const kAFNetworkActivityIndicatorInvisibilityDelay = 0.25;
 
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-    [_activityIndicatorVisibilityTimer invalidate];
 }
 
 - (void)_updateActivityCount {
     if (_enabled) {
-        // Delay hiding of activity indicator for a short interval, to avoid flickering
-        if (![self isNetworkActivityIndicatorVisible]) {
-            [_activityIndicatorVisibilityTimer invalidate];
-            _activityIndicatorVisibilityTimer = [NSTimer scheduledTimerWithTimeInterval:kAFNetworkActivityIndicatorInvisibilityDelay target:self selector:@selector(updateNetworkActivityIndicatorVisibility) userInfo:nil repeats:NO];
+        if (!_activityCount) {
+            // Delay hiding of activity indicator for a short interval, to avoid flickering
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, kAFNetworkActivityIndicatorInvisibilityDelay * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+                [self _updateNetworkActivityIndicatorVisibility];
+            });
         } else {
-            [self updateNetworkActivityIndicatorVisibility];
+            [self _updateNetworkActivityIndicatorVisibility];
         }
+    } else {
+        [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
     }
 }
 
 - (BOOL)isNetworkActivityIndicatorVisible {
-    return _activityCount > 0;
+    return [UIApplication sharedApplication].networkActivityIndicatorVisible;
 }
 
-- (void)updateNetworkActivityIndicatorVisibility {
-    [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:[self isNetworkActivityIndicatorVisible]];
+- (void)_updateNetworkActivityIndicatorVisibility {
+    [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:(_activityCount > 0)];
 }
 
 - (void)incrementActivityCount {
@@ -101,7 +100,7 @@ static NSTimeInterval const kAFNetworkActivityIndicatorInvisibilityDelay = 0.25;
 
 - (void)decrementActivityCount {
     if (_activityCount <= 0) { 
-        _activityCount = 0;
+        [self resetActivityCount];
         return;
     }
     
