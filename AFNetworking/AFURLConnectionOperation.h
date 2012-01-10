@@ -231,4 +231,10 @@ extern NSString * const AFNetworkingOperationDidFinishNotification;
 @property (readonly, strong) NSArray *executionBlocks;
 
 
+///-------------------------------------------------
+/// @name Setting Authentication Challenge Callbacks
+///-------------------------------------------------
+
+- (void)setAuthenticationChallengeBlock:(void (^)(NSURLConnection *connection, NSURLAuthenticationChallenge *challenge))block;
+
 @end
