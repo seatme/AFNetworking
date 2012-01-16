@@ -338,8 +338,8 @@ didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge
         if ([challenge previousFailureCount] == 0) {
             NSURLCredential *credential = nil;
             
-            NSString *username = (__bridge_retain  NSString *)CFURLCopyUserName((__bridge CFURLRef)[self.request URL]);
-            NSString *password = (__bridge_retain NSString *)CFURLCopyPassword((__bridge CFURLRef)[self.request URL]);
+            NSString *username = (__bridge_transfer NSString *)CFURLCopyUserName((__bridge CFURLRef)[self.request URL]);
+            NSString *password = (__bridge_transfer NSString *)CFURLCopyPassword((__bridge CFURLRef)[self.request URL]);
             
             if (username && password) {
                 credential = [NSURLCredential credentialWithUser:username password:password persistence:NSURLCredentialPersistenceNone];

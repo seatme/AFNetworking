@@ -474,10 +474,10 @@ static inline NSString * AFMultipartFormFinalBoundary() {
     NSURLResponse *response = nil;
     NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:error];
     
-    if (response && !error) {
-        [self appendPartWithFileData:data name:name fileName:[response suggestedFilename] mimeType:[response MIMEType]];   
-    
-	    return YES;
+    if (data && response) {
+        [self appendPartWithFileData:data name:name fileName:[response suggestedFilename] mimeType:[response MIMEType]];
+        
+        return YES;
     } else {
         return NO;
 	}
