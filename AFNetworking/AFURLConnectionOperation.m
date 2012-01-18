@@ -391,7 +391,7 @@ didReceiveResponse:(NSURLResponse *)response
     
     if (self.outputStream) {
         if ([self.outputStream hasSpaceAvailable]) {
-            const uint8_t *dataBuffer = [data bytes];
+            const uint8_t *dataBuffer = (uint8_t *) [data bytes];
             [self.outputStream write:&dataBuffer[0] maxLength:[data length]];
         }
     } else {
