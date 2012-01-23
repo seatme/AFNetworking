@@ -434,7 +434,7 @@ didReceiveResponse:(NSURLResponse *)response
         @throw [NSException exceptionWithName:NSInvalidArgumentException reason:@"operation has already began executing" userInfo:nil];
     }
     @synchronized(_executionBlocks) {
-        [_executionBlocks addObject:executionBlock];
+        [_executionBlocks addObject:[executionBlock copy]];
     }
 }
 
