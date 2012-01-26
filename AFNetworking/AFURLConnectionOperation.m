@@ -401,6 +401,17 @@ didReceiveResponse:(NSURLResponse *)response
     }
     
     @synchronized(_executionBlocks){
+        if (![self isCancelled]) {
+            if ([_executionBlocks count] > 0) {
+                for (void(^executionBlock)(void) in _executionBlocks)
+                {
+                    if ([self isCancelled]) 
+                        break;
+                    executionBlock();
+                    
+                }
+            }
+        }
         [_executionBlocks removeAllObjects];
     }
     
