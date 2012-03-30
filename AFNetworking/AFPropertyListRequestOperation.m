@@ -96,7 +96,6 @@
     return self;
 }
 
-
 - (id)responseObject {
     return [self responsePropertyList];
 }
@@ -112,6 +111,5 @@
 + (BOOL)canProcessRequest:(NSURLRequest *)request {
     return [[self defaultAcceptableContentTypes] containsObject:[request valueForHTTPHeaderField:@"Accept"]] || [[self defaultAcceptablePathExtensions] containsObject:[[request URL] pathExtension]];
 }
-
 
 @end

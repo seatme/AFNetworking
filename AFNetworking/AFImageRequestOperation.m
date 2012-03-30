@@ -21,14 +21,22 @@
 // THE SOFTWARE.
 
 #import "AFImageRequestOperation.h"
-#import "AFImageCache.h"
+
+static dispatch_queue_t af_image_request_operation_processing_queue;
+static dispatch_queue_t image_request_operation_processing_queue() {
+    if (af_image_request_operation_processing_queue == NULL) {
+        af_image_request_operation_processing_queue = dispatch_queue_create("com.alamofire.networking.image-request.processing", 0);
+    }
+    
+    return af_image_request_operation_processing_queue;
+}
+
+@interface AFImageRequestOperation ()
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
 typedef UIImage AFImage;
 #elif __MAC_OS_X_VERSION_MIN_REQUIRED
 typedef NSImage AFImage;
 #endif
-
-@interface AFImageRequestOperation ()
 @property (readwrite, nonatomic, strong) AFImage *responseImage;
 
 + (NSSet *)defaultAcceptableContentTypes;
@@ -77,7 +85,6 @@ typedef NSImage AFImage;
             }
         }   
     };
-    
     return operation;
 }
 
@@ -112,33 +119,20 @@ typedef NSImage AFImage;
             CGImageRef imageRef = [image CGImage];
             //This seems like the wrong way to handle this. shouldn't the guy at the end handle this?
             image = [UIImage imageWithCGImage:imageRef scale:blockSelf.imageScale orientation:UIImageOrientationUp];
-            cacheResponseDataInsteadOfImage = NO;
         }
         
         if (blockSelf.imageProcessingBlock) {
             image = blockSelf.imageProcessingBlock(image);
-            cacheResponseDataInsteadOfImage = NO;
         }
         
         blockSelf.responseImage = image;
         
-        if ([blockSelf.request cachePolicy] != NSURLCacheStorageNotAllowed) {
-            [[AFImageCache sharedImageCache] cacheImageData:(cacheResponseDataInsteadOfImage?blockSelf.responseData:UIImagePNGRepresentation(image)) 
-                                                     forURL:[blockSelf.request URL] 
-                                                  cacheName:blockSelf.cacheName];
-        }
         
 #elif __MAC_OS_X_VERSION_MIN_REQUIRED
         NSImage *image = [[NSImage alloc] initWithData:blockSelf.responseData];
         
         if (blockSelf.imageProcessingBlock) {
             image = blockSelf.imageProcessingBlock(image);
-        }
-        
-        if ([blockSelf.request cachePolicy] != NSURLCacheStorageNotAllowed) {
-            [[AFImageCache sharedImageCache] cacheImageData:blockSelf.responseData 
-                                                     forURL:[blockSelf.request URL] 
-                                                  cacheName:blockSelf.cacheName];
         }
 #endif 
     }];
@@ -165,7 +159,7 @@ typedef NSImage AFImage;
 
 #elif __MAC_OS_X_VERSION_MIN_REQUIRED 
 - (NSImage *)responseImage {
-    if (!_responseImage && [self isFinished]) {
+    if (!_responseImage && [self.responseData length] > 0 && [self isFinished]) {
         // Ensure that the image is set to it's correct pixel width and height
         NSBitmapImageRep *bitimage = [[NSBitmapImageRep alloc] initWithData:self.responseData];
         self.responseImage = [[NSImage alloc] initWithSize:NSMakeSize([bitimage pixelsWide], [bitimage pixelsHigh])];

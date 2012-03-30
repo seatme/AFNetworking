@@ -26,18 +26,19 @@
 
 @interface AFXMLRequestOperation ()
 @property (readwrite, nonatomic, strong) NSXMLParser *responseXMLParser;
+@property (readwrite, nonatomic, retain) NSError *XMLError;
 + (NSSet *)defaultAcceptableContentTypes;
 + (NSSet *)defaultAcceptablePathExtensions;
 @end
 
 @implementation AFXMLRequestOperation
 @synthesize responseXMLParser = _responseXMLParser;
+@synthesize XMLError = _XMLError;
 
 + (AFXMLRequestOperation *)XMLParserRequestOperationWithRequest:(NSURLRequest *)urlRequest
                                                         success:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, NSXMLParser *XMLParser))success
                                                         failure:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, NSError *error, NSXMLParser *XMLParser))failure
 {
-    
     AFXMLRequestOperation *requestOperation = [[self alloc] initWithRequest:urlRequest];
     //need to really split this class up.
     __weak AFXMLRequestOperation *weakself = requestOperation;

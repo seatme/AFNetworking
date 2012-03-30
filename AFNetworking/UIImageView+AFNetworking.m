@@ -24,10 +24,15 @@
 #import <objc/runtime.h>
 
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
-
 #import "UIImageView+AFNetworking.h"
 
-#import "AFImageCache.h"
+@interface AFImageCache : NSCache
+- (UIImage *)cachedImageForRequest:(NSURLRequest *)request;
+- (void)cacheImageData:(NSData *)imageData
+            forRequest:(NSURLRequest *)request;
+@end
+
+#pragma mark -
 
 static char kAFImageRequestOperationObjectKey;
 
@@ -52,14 +57,24 @@ static char kAFImageRequestOperationObjectKey;
 }
 
 + (NSOperationQueue *)af_sharedImageRequestOperationQueue {
-    static NSOperationQueue *_imageRequestOperationQueue = nil;
+    static NSOperationQueue *_af_imageRequestOperationQueue = nil;
     
-    if (!_imageRequestOperationQueue) {
-        _imageRequestOperationQueue = [[NSOperationQueue alloc] init];
-        [_imageRequestOperationQueue setMaxConcurrentOperationCount:8];
+    if (!_af_imageRequestOperationQueue) {
+        _af_imageRequestOperationQueue = [[NSOperationQueue alloc] init];
+        [_af_imageRequestOperationQueue setMaxConcurrentOperationCount:8];
     }
     
-    return _imageRequestOperationQueue;
+    return _af_imageRequestOperationQueue;
+}
+
++ (AFImageCache *)af_sharedImageCache {
+    static AFImageCache *_af_imageCache = nil;
+    static dispatch_once_t oncePredicate;
+    dispatch_once(&oncePredicate, ^{
+        _af_imageCache = [[AFImageCache alloc] init];
+    });
+    
+    return _af_imageCache;
 }
 
 #pragma mark -
@@ -83,13 +98,9 @@ static char kAFImageRequestOperationObjectKey;
                        success:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, UIImage *image))success
                        failure:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, NSError *error))failure
 {
-    if (![urlRequest URL] || (![self.af_imageRequestOperation isCancelled] && [[urlRequest URL] isEqual:[[self.af_imageRequestOperation request] URL]])) {
-        return;
-    } else {
-        [self cancelImageRequestOperation];
-    }
+    [self cancelImageRequestOperation];
     
-    UIImage *cachedImage = [[AFImageCache sharedImageCache] cachedImageForURL:[urlRequest URL] cacheName:nil];
+    UIImage *cachedImage = [[[self class] af_sharedImageCache] cachedImageForRequest:urlRequest];
     if (cachedImage) {
         self.image = cachedImage;
         self.af_imageRequestOperation = nil;
@@ -99,7 +110,6 @@ static char kAFImageRequestOperationObjectKey;
         }
     } else {
         self.image = placeholderImage;
-        
         AFImageRequestOperation *requestOperation = [[AFImageRequestOperation alloc] initWithRequest:urlRequest];
         
         __weak AFImageRequestOperation *weakself = requestOperation;
@@ -120,8 +130,8 @@ static char kAFImageRequestOperationObjectKey;
                 } else {
                     self.image = placeholderImage;
                 }
+                [[[self class] af_sharedImageCache] cacheImageData:strongself.responseData forRequest:urlRequest];
                 
-                [[AFImageCache sharedImageCache] cacheImageData:strongself.responseData forURL:[urlRequest URL] cacheName:nil];
             }
         };
         
@@ -133,6 +143,40 @@ static char kAFImageRequestOperationObjectKey;
 
 - (void)cancelImageRequestOperation {
     [self.af_imageRequestOperation cancel];
+    self.af_imageRequestOperation = nil;
+}
+
+@end
+
+#pragma mark -
+
+static inline NSString * AFImageCacheKeyFromURLRequest(NSURLRequest *request) {
+    return [[request URL] absoluteString];
+}
+
+@implementation AFImageCache
+
+- (UIImage *)cachedImageForRequest:(NSURLRequest *)request {
+    switch ([request cachePolicy]) {
+        case NSURLRequestReloadIgnoringCacheData:
+        case NSURLRequestReloadIgnoringLocalAndRemoteCacheData:
+            return nil;
+        default:
+            break;
+    }
+    
+	UIImage *image = [UIImage imageWithData:[self objectForKey:AFImageCacheKeyFromURLRequest(request)]];
+	if (image) {
+		return [UIImage imageWithCGImage:[image CGImage] scale:[[UIScreen mainScreen] scale] orientation:image.imageOrientation];
+	}
+    
+    return image;
+}
+
+- (void)cacheImageData:(NSData *)imageData
+            forRequest:(NSURLRequest *)request
+{
+    [self setObject:[NSPurgeableData dataWithData:imageData] forKey:AFImageCacheKeyFromURLRequest(request)];
 }
 
 @end

@@ -41,7 +41,6 @@
     BOOL _attemptToContinueWhenAppEntersBackground;
     UIBackgroundTaskIdentifier _backgroundTask;
 #endif
-    
 }
 
 ///----------------------------------------------
@@ -100,7 +99,6 @@
  A Boolean value that corresponds to whether the MIME type of the response is among the specified set of acceptable content types. Returns `YES` if `acceptableContentTypes` is `nil`.
  */
 @property (readonly) BOOL hasAcceptableContentType;
-
 
 ///-----------------------
 /// @name Subclass methods

@@ -22,7 +22,6 @@
 
 #import "AFHTTPRequestOperation.h"
 
-
 @interface AFHTTPRequestOperation ()
 @property (readwrite, nonatomic, strong) NSError *HTTPError;
 @property (readonly, nonatomic, assign) BOOL hasContent;
@@ -30,6 +29,38 @@
 - (void)endBackgroundTask;
 #endif
 @end
+
+static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
+    NSMutableString *string = [NSMutableString string];
+
+    NSRange range = NSMakeRange([indexSet firstIndex], 1);
+    while (range.location != NSNotFound) {
+        NSUInteger nextIndex = [indexSet indexGreaterThanIndex:range.location];
+        while (nextIndex == range.location + range.length) {
+            range.length++;
+            nextIndex = [indexSet indexGreaterThanIndex:nextIndex];
+        }
+
+        if (string.length) {
+            [string appendString:@","];
+        }
+
+        if (range.length == 1) {
+            [string appendFormat:@"%u", range.location];
+        } else {
+            NSUInteger firstIndex = range.location;
+            NSUInteger lastIndex = firstIndex + range.length - 1;
+            [string appendFormat:@"%u-%u", firstIndex, lastIndex];
+        }
+
+        range.location = nextIndex;
+        range.length = 1;
+    }
+
+    return string;
+}
+
+#pragma mark -
 
 @implementation AFHTTPRequestOperation
 @synthesize acceptableStatusCodes = _acceptableStatusCodes;
@@ -114,11 +145,11 @@
     if (self.response && !self.HTTPError) {
         if (![self hasAcceptableStatusCode]) {
             NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
-            [userInfo setValue:[NSString stringWithFormat:NSLocalizedString(@"Expected status code %@, got %d", nil), self.acceptableStatusCodes, [self.response statusCode]] forKey:NSLocalizedDescriptionKey];
+            [userInfo setValue:[NSString stringWithFormat:NSLocalizedString(@"Expected status code in (%@), got %d", nil), AFStringFromIndexSet(self.acceptableStatusCodes), [self.response statusCode]] forKey:NSLocalizedDescriptionKey];
             [userInfo setValue:[self.request URL] forKey:NSURLErrorFailingURLErrorKey];
             
             self.HTTPError = [[NSError alloc] initWithDomain:AFNetworkingErrorDomain code:NSURLErrorBadServerResponse userInfo:userInfo];
-        } else if ([self hasContent] && ![self hasAcceptableContentType]) { // Don't invalidate content type if there is no content
+        } else if ([self.responseData length] > 0 && ![self hasAcceptableContentType]) { // Don't invalidate content type if there is no content
             NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
             [userInfo setValue:[NSString stringWithFormat:NSLocalizedString(@"Expected content type %@, got %@", nil), self.acceptableContentTypes, [self.response MIMEType]] forKey:NSLocalizedDescriptionKey];
             [userInfo setValue:[self.request URL] forKey:NSURLErrorFailingURLErrorKey];
@@ -127,15 +158,11 @@
         }
     }
     
-    if (_HTTPError) {
-        return _HTTPError;
+    if (self.HTTPError) {
+        return self.HTTPError;
     } else {
         return [super error];
     }
-}
-
-- (BOOL)hasContent {
-    return [self.responseData length] > 0;
 }
 
 - (BOOL)hasAcceptableStatusCode {

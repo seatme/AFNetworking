@@ -80,15 +80,17 @@
         return nil;
     }
     
+    __weak AFJSONRequestOperation* weakSelf = self; 
     [self addExecutionBlock:[^{
+        AFJSONRequestOperation *strongself = weakSelf;
         NSError *error = nil;
-        if ([self.responseData length] == 0) {
-            self.responseJSON = nil;
+        if ([strongself.responseData length] == 0) {
+            strongself.responseJSON = nil;
         } else {
-            self.responseJSON = AFJSONDecode(self.responseData, &error);
+            strongself.responseJSON = AFJSONDecode(strongself.responseData, &error);
         }
-        self.JSONError = error;
-    } copy]];
+        strongself.JSONError = error;
+    }copy]];
     
     self.acceptableContentTypes = [[self class] defaultAcceptableContentTypes];
     
