@@ -266,7 +266,9 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
 #pragma mark - NSOperation
 
 - (BOOL)isReady {
-    return (self.state == AFHTTPOperationReadyState && [super isReady]);
+    BOOL result = [self isCancelled] || (self.state == AFHTTPOperationReadyState && [super isReady]);
+
+    return result;
 }
 
 - (BOOL)isExecuting {
@@ -274,7 +276,9 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
 }
 
 - (BOOL)isFinished {
-    return self.state == AFHTTPOperationFinishedState;
+    BOOL result = [self isCancelled] || self.state == AFHTTPOperationFinishedState;
+
+    return result;
 }
 
 - (BOOL)isConcurrent {
@@ -323,6 +327,7 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
     if ([self isExecuting] ) {
         [self.connection cancel];
     }
+    [self finish];
 
     [super cancel];
 }
