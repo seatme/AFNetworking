@@ -256,8 +256,9 @@ static inline NSString * AFKeyPathFromOperationState(AFOperationState state) {
     } else {
         __weak id _blockSelf = self;
         [super setCompletionBlock:^ {
+            id strongSelf = _blockSelf;
             block();
-            [_blockSelf setCompletionBlock:nil];
+            [strongSelf setCompletionBlock:nil];
         }];
     }
 }
