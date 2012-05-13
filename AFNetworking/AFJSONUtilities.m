@@ -24,6 +24,14 @@
 
 NSData * AFJSONEncode(id object, NSError **error) {
     NSData *data = nil;
+#if __has_feature(objc_arc) 
+    NSError *jsonError;
+    data = [NSJSONSerialization dataWithJSONObject:object options:0 error:&jsonError];
+    if (!data && error) {
+        *error = jsonError;
+    }
+#else
+
     
     SEL _JSONKitSelector = NSSelectorFromString(@"JSONDataWithOptions:error:"); 
     SEL _YAJLSelector = NSSelectorFromString(@"yajl_JSONString");
@@ -114,12 +122,19 @@ NSData * AFJSONEncode(id object, NSError **error) {
         NSDictionary *userInfo = [NSDictionary dictionaryWithObject:NSLocalizedString(@"Please either target a platform that supports NSJSONSerialization or add one of the following libraries to your project: JSONKit, SBJSON, or YAJL", nil) forKey:NSLocalizedRecoverySuggestionErrorKey];
         [[NSException exceptionWithName:NSInternalInconsistencyException reason:NSLocalizedString(@"No JSON generation functionality available", nil) userInfo:userInfo] raise];
     }
-    
+#endif
     return data;
 }
 
 id AFJSONDecode(NSData *data, NSError **error) {    
     id JSON = nil;
+#if __has_feature(objc_arc) 
+    NSError *jsonError;
+    JSON = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+    if (!JSON && error) {
+        *error = jsonError;
+    }
+#else
     
     SEL _JSONKitSelector = NSSelectorFromString(@"objectFromJSONDataWithParseOptions:error:"); 
     SEL _YAJLSelector = NSSelectorFromString(@"yajl_JSONWithOptions:error:");
@@ -212,6 +227,6 @@ id AFJSONDecode(NSData *data, NSError **error) {
         NSDictionary *userInfo = [NSDictionary dictionaryWithObject:NSLocalizedString(@"Please either target a platform that supports NSJSONSerialization or add one of the following libraries to your project: JSONKit, SBJSON, or YAJL", nil) forKey:NSLocalizedRecoverySuggestionErrorKey];
         [[NSException exceptionWithName:NSInternalInconsistencyException reason:NSLocalizedString(@"No JSON parsing functionality available", nil) userInfo:userInfo] raise];
     }
-    
+#endif
     return JSON;
 }

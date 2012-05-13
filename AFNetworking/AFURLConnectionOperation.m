@@ -110,7 +110,6 @@ static inline BOOL AFStateTransitionIsValid(AFOperationState fromState, AFOperat
 @property (readwrite, nonatomic, copy) AFURLConnectionOperationCacheResponseBlock cacheResponse;
 
 - (void)operationDidStart;
-- (void)finish;
 @end
 
 @implementation AFURLConnectionOperation

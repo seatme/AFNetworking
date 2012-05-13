@@ -24,7 +24,6 @@
 
 @interface AFHTTPRequestOperation ()
 @property (readwrite, nonatomic, strong) NSError *HTTPError;
-@property (readonly, nonatomic, assign) BOOL hasContent;
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_4_0
 - (void)endBackgroundTask;
 #endif
@@ -214,8 +213,8 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
     [super start];
 }
 
-- (void)cancel {
-    [super cancel];
+- (void)finish {
+    [super finish];
     [self endBackgroundTask];
 }
 #endif

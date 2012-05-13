@@ -266,4 +266,10 @@ extern NSString * const AFNetworkingOperationDidFinishNotification;
  */
 - (void)setCacheResponseBlock:(NSCachedURLResponse * (^)(NSURLConnection *connection, NSCachedURLResponse *cachedResponse))block;
 
+
+/** 
+ Not to be called directly. For subclasses to get notification that the operation is finished. You must call super. 
+ */
+- (void)finish;
+
 @end
