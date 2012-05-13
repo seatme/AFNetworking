@@ -287,7 +287,9 @@ static inline BOOL AFStateTransitionIsValid(AFOperationState fromState, AFOperat
 #pragma mark - NSOperation
 
 - (BOOL)isReady {
-    return (self.state == AFHTTPOperationReadyState && [super isReady]);
+    BOOL result = [self isCancelled] || (self.state == AFHTTPOperationReadyState && [super isReady]);
+
+    return result;
 }
 
 - (BOOL)isExecuting {
@@ -295,7 +297,9 @@ static inline BOOL AFStateTransitionIsValid(AFOperationState fromState, AFOperat
 }
 
 - (BOOL)isFinished {
-    return self.state == AFHTTPOperationFinishedState;
+    BOOL result = [self isCancelled] || self.state == AFHTTPOperationFinishedState;
+
+    return result;
 }
 
 - (BOOL)isCancelled {
@@ -356,6 +360,7 @@ static inline BOOL AFStateTransitionIsValid(AFOperationState fromState, AFOperat
         // Cancel the connection on the thread it runs on to prevent race conditions 
         [self performSelector:@selector(cancelConnection) onThread:[[self class] networkRequestThread] withObject:nil waitUntilDone:NO modes:[self.runLoopModes allObjects]];
     }
+    [self finish];
     [self.lock unlock];
 }
 
@@ -540,8 +545,11 @@ didReceiveResponse:(NSURLResponse *)response
         
         return cachedResponse; 
     }
-    
-    if (self.cacheStoragePolicy == AFURLCacheStorageDefault 
+
+    if (self.cacheStoragePolicy == AFURLCacheStorageNotAllowed) {
+        return nil;
+    }
+    else if (self.cacheStoragePolicy == AFURLCacheStorageDefault 
         || self.cacheStoragePolicy == cachedResponse.storagePolicy) {
         return cachedResponse;
     }

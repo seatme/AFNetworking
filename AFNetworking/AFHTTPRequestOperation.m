@@ -87,30 +87,32 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
     //by default we will use the queue that created the request.
     self.callbackQueue = dispatch_get_current_queue();
     
+    __weak AFHTTPRequestOperation *weakSelf = self;
     super.completionBlock = ^ {
-        if (_completionBlock) {
-            _completionBlock(); //call any child completion blocks that may have been passed in that they may want to run
+        AFHTTPRequestOperation *strongSelf = weakSelf;
+        if (strongSelf->_completionBlock) {
+            strongSelf->_completionBlock(); //call any child completion blocks that may have been passed in that they may want to run
         }
         
-        if ([self isCancelled]) {
+        if ([strongSelf isCancelled]) {
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_4_0
-            [self endBackgroundTask];
+            [strongSelf endBackgroundTask];
 #endif
-            self.finishedBlock = nil;
+            strongSelf.finishedBlock = nil;
             return;
         }
         
-        if (self.finishedBlock) {
-            dispatch_sync(self.callbackQueue, ^(void) {
-                self.finishedBlock();
+        if (strongSelf.finishedBlock) {
+            dispatch_sync(strongSelf.callbackQueue, ^(void) {
+                strongSelf.finishedBlock();
             });
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_4_0
-            [self endBackgroundTask];
+            [strongSelf endBackgroundTask];
 #endif
-            self.finishedBlock = nil;
+            strongSelf.finishedBlock = nil;
         } else {
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_4_0
-            [self endBackgroundTask];
+            [strongSelf endBackgroundTask];
 #endif
         }
     };
