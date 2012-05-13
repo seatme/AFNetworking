@@ -463,8 +463,11 @@ didReceiveResponse:(NSURLResponse *)response
     if ([self isCancelled]) {
         return nil;
     }
-    
-    if (self.cacheStoragePolicy == AFURLCacheStorageDefault 
+
+    if (self.cacheStoragePolicy == AFURLCacheStorageNotAllowed) {
+        return nil;
+    }
+    else if (self.cacheStoragePolicy == AFURLCacheStorageDefault 
         || self.cacheStoragePolicy == cachedResponse.storagePolicy) {
         return cachedResponse;
     }
