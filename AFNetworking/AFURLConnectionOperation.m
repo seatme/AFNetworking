@@ -94,7 +94,7 @@ static inline BOOL AFStateTransitionIsValid(AFOperationState fromState, AFOperat
 
 @interface AFURLConnectionOperation ()
 @property (readwrite, nonatomic, assign) AFOperationState state;
-@property (readwrite, nonatomic, retain) NSRecursiveLock *lock;
+@property (readwrite, nonatomic, strong) NSRecursiveLock *lock;
 @property (readwrite, nonatomic, weak) NSURLConnection *connection;
 @property (readwrite, nonatomic, strong) NSURLRequest *request;
 @property (readwrite, nonatomic, strong) NSURLResponse *response;
@@ -195,7 +195,7 @@ static inline BOOL AFStateTransitionIsValid(AFOperationState fromState, AFOperat
     if (!block) {
         [super setCompletionBlock:nil];
     } else {
-        __block id _blockSelf = self;
+        __unsafe_unretained id _blockSelf = self;
         [super setCompletionBlock:^ {
             block();
             [_blockSelf setCompletionBlock:nil];

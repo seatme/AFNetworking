@@ -117,8 +117,8 @@ NSString * AFURLEncodedStringFromStringWithEncoding(NSString *string, NSStringEn
     NSString *_value;
 }
 
-@property (readwrite, nonatomic, retain) id key;
-@property (readwrite, nonatomic, retain) id value;
+@property (readwrite, nonatomic) id key;
+@property (readwrite, nonatomic) id value;
 
 - (id)initWithKey:(id)key value:(id)value; 
 - (NSString *)URLEncodedStringValueWithEncoding:(NSStringEncoding)stringEncoding;
@@ -224,7 +224,7 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
 @property (readwrite, nonatomic, strong) NSMutableArray *registeredHTTPOperationClassNames;
 @property (readwrite, nonatomic, strong) NSMutableDictionary *defaultHeaders;
 @property (readwrite, nonatomic, strong) NSOperationQueue *operationQueue;
-@property (readwrite, nonatomic, assign) AFNetworkReachabilityRef networkReachability;
+@property (readwrite, nonatomic, unsafe_unretained) AFNetworkReachabilityRef networkReachability;
 @property (readwrite, nonatomic, copy) AFNetworkReachabilityStatusBlock networkReachabilityStatusBlock;
 
 #ifdef _SYSTEMCONFIGURATION_H
@@ -286,11 +286,6 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
     return self;
 }
 
-- (void)dealloc {
-#ifdef _SYSTEMCONFIGURATION_H
-    [self stopMonitoringNetworkReachability];
-#endif
-}
 
 - (NSString *)description {
     return [NSString stringWithFormat:@"<%@: %p, baseURL: %@, defaultHeaders: %@, registeredOperationClasses: %@, operationQueue: %@>", NSStringFromClass([self class]), self, [self.baseURL absoluteString], self.defaultHeaders, self.registeredHTTPOperationClassNames, self.operationQueue];
