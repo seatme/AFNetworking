@@ -76,16 +76,17 @@
         return nil;
     }
     
-    __weak AFPropertyListRequestOperation *blockSelf = self;
+    __weak AFPropertyListRequestOperation *weakSelf = self;
     [self addExecutionBlock:^{
+        AFPropertyListRequestOperation *strongSelf = weakSelf;
         NSPropertyListFormat format;
         NSError *error = nil;
-        blockSelf.responsePropertyList = [NSPropertyListSerialization propertyListWithData:blockSelf.responseData 
-                                                                                   options:blockSelf.propertyListReadOptions 
-                                                                                    format:&format 
-                                                                                     error:&error];
-        blockSelf.propertyListFormat = format;
-        blockSelf.propertyListError = error; 
+        strongSelf.responsePropertyList = [NSPropertyListSerialization propertyListWithData:strongSelf.responseData 
+                                                                                    options:strongSelf.propertyListReadOptions 
+                                                                                     format:&format 
+                                                                                      error:&error];
+        strongSelf.propertyListFormat = format;
+        strongSelf.propertyListError = error; 
     }];
     
     self.acceptableContentTypes = [[self class] defaultAcceptableContentTypes];
