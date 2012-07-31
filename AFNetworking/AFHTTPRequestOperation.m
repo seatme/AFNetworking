@@ -132,7 +132,7 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
     _completionBlock=nil;
     
     if (_callbackQueue) {
-        dispatch_release(_callbackQueue),_callbackQueue=NULL;
+        _callbackQueue=NULL;
     }
     
     _finishedBlock = nil;
@@ -241,13 +241,7 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
     if (_callbackQueue == callbackQueue) 
         return;
     
-    if (_callbackQueue)
-        dispatch_release(_callbackQueue);
-    
-    if (callbackQueue){
-        dispatch_retain(callbackQueue);
-        _callbackQueue = callbackQueue;
-    }
+    _callbackQueue = callbackQueue;
 }
 
 - (id) responseObject {
