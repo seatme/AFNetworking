@@ -132,7 +132,10 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
     _completionBlock=nil;
     
     if (_callbackQueue) {
-        _callbackQueue=NULL;
+#if (__IPHONE_OS_VERSION_MIN_REQUIRED < 60000)
+        dispatch_release(_callbackQueue);
+#endif
+        _callbackQueue = NULL;
     }
     
     _finishedBlock = nil;
@@ -240,6 +243,16 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
 - (void) setCallbackQueue:(dispatch_queue_t)callbackQueue {
     if (_callbackQueue == callbackQueue) 
         return;
+    
+#if (__IPHONE_OS_VERSION_MIN_REQUIRED < 60000)
+    if (_callbackQueue)
+        dispatch_release(_callbackQueue);
+    
+    if (callbackQueue){
+        dispatch_retain(callbackQueue);
+        _callbackQueue = callbackQueue;
+    }
+#endif
     
     _callbackQueue = callbackQueue;
 }
