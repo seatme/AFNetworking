@@ -83,8 +83,8 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
     _completionBlock = nil;
     self.acceptableStatusCodes = [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(200, 100)];
     
-    //by default we will use the queue that created the request.
-    self.callbackQueue = dispatch_get_current_queue();
+    //by default we will use the main queue.
+    self.callbackQueue = dispatch_get_main_queue();
     
     __weak AFHTTPRequestOperation *weakSelf = self;
     super.completionBlock = ^ {

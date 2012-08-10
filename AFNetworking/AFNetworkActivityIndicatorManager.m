@@ -73,7 +73,7 @@ static NSTimeInterval const kAFNetworkActivityIndicatorInvisibilityDelay = 2.0;
     if (_enabled) {
         if (!_activityCount) {
             // Delay hiding of activity indicator for a short interval, to avoid flickering
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, kAFNetworkActivityIndicatorInvisibilityDelay * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, kAFNetworkActivityIndicatorInvisibilityDelay * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
                 [self _updateNetworkActivityIndicatorVisibility];
             });
         } else {
