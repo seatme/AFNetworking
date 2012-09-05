@@ -83,8 +83,8 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
     _completionBlock = nil;
     self.acceptableStatusCodes = [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(200, 100)];
     
-    //by default we will use the queue that created the request.
-    self.callbackQueue = dispatch_get_current_queue();
+    //by default we will use the main queue.
+    self.callbackQueue = dispatch_get_main_queue();
     
     __weak AFHTTPRequestOperation *weakSelf = self;
     super.completionBlock = ^ {
@@ -132,7 +132,10 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
     _completionBlock=nil;
     
     if (_callbackQueue) {
-        dispatch_release(_callbackQueue),_callbackQueue=NULL;
+#if (__IPHONE_OS_VERSION_MIN_REQUIRED < 60000)
+        dispatch_release(_callbackQueue);
+#endif
+        _callbackQueue = NULL;
     }
     
     _finishedBlock = nil;
@@ -241,6 +244,7 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
     if (_callbackQueue == callbackQueue) 
         return;
     
+#if (__IPHONE_OS_VERSION_MIN_REQUIRED < 60000)
     if (_callbackQueue)
         dispatch_release(_callbackQueue);
     
@@ -248,6 +252,9 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
         dispatch_retain(callbackQueue);
         _callbackQueue = callbackQueue;
     }
+#endif
+    
+    _callbackQueue = callbackQueue;
 }
 
 - (id) responseObject {
