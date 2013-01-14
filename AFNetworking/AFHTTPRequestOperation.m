@@ -132,7 +132,7 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
     _completionBlock=nil;
     
     if (_callbackQueue) {
-#if (__IPHONE_OS_VERSION_MIN_REQUIRED < 60000)
+#if !OS_OBJECT_USE_OBJC
         dispatch_release(_callbackQueue);
 #endif
         _callbackQueue = NULL;
@@ -244,7 +244,7 @@ static NSString * AFStringFromIndexSet(NSIndexSet *indexSet) {
     if (_callbackQueue == callbackQueue) 
         return;
     
-#if (__IPHONE_OS_VERSION_MIN_REQUIRED < 60000)
+#if !OS_OBJECT_USE_OBJC
     if (_callbackQueue)
         dispatch_release(_callbackQueue);
     
