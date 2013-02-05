@@ -112,8 +112,6 @@ typedef NSImage AFImage;
     __weak AFImageRequestOperation *blockSelf = self;
     [self addExecutionBlock:^{
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
-        BOOL cacheResponseDataInsteadOfImage = YES; //converting to a PNG to put in the cache is costly so lets try and avoid it.
-        
         UIImage *image = [UIImage imageWithData:blockSelf.responseData];
         if (blockSelf.imageScale != 1.0f || image.imageOrientation != UIImageOrientationUp) {
             CGImageRef imageRef = [image CGImage];
